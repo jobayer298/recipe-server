@@ -25,55 +25,94 @@ async function run() {
     // client.connect();
     const recipeCollection = client.db("recipeNext").collection("recipes");
     app.post("/recipes", async (req, res) => {
-      const recipes = req.body;
-      console.log(recipes);
-      const result = await recipeCollection.insertOne(recipes);
-      res.send(result);
+      try {
+        const recipes = req.body;
+        console.log(recipes);
+        const result = await recipeCollection.insertOne(recipes);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
     });
 
     app.get("/all-recipe", async (req, res) => {
-      const result = await recipeCollection.find().toArray();
-      res.send(result);
+      try {
+        const result = await recipeCollection.find().toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
     });
 
     app.get("/recipe/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await recipeCollection.findOne(query);
-      res.send(result);
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await recipeCollection.findOne(query);
+        if (!result) {
+          res.status(404).send("Recipe not found");
+          return;
+        }
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
     });
 
     app.delete("/recipe/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await recipeCollection.deleteOne(query);
-      res.send(result);
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await recipeCollection.deleteOne(query);
+        if (result.deletedCount === 0) {
+          res.status(404).send("Recipe not found");
+          return;
+        }
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
     });
 
     app.put("/recipe/:id", async (req, res) => {
-      const id = req.params.id;
-      const recipe = req.body;
-      const query = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updateRecipe = {
-        $set: {
-          ...recipe
-        },
-      };
-      const result = await recipeCollection.updateOne(
-        query,
-        updateRecipe,
-        options
-      );
-      res.send(result);
+      try {
+        const id = req.params.id;
+        const recipe = req.body;
+        const query = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const updateRecipe = {
+          $set: {
+            ...recipe,
+          },
+        };
+        const result = await recipeCollection.updateOne(
+          query,
+          updateRecipe,
+          options
+        );
+        if (result.matchedCount === 0) {
+          res.status(404).send("Recipe not found");
+          return;
+        }
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
     });
-   app.get("/search/:key", async(req, res) =>{
-    const key = req.params.key 
-    const data = await recipeCollection.find({
-      $or: [{ title: { $regex: key, $options: "i" } }],
-    }).toArray()
-    res.send(data)
-   })
+    app.get("/search/:key", async (req, res) => {
+      try {
+        const key = req.params.key;
+        const data = await recipeCollection
+          .find({
+            $or: [{ title: { $regex: key, $options: "i" } }],
+          })
+          .toArray();
+        res.send(data);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
@@ -92,18 +131,3 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
 });
-
-// const uri =
-//   "mongodb+srv://recipe-next:OLUbbPMKOPQszVXh@cluster0.je2pvxf.mongodb.net/?retryWrites=true&w=majority";
-// const recipeCollection = client.db("recipeNext").collection("recipes");
-// app.post("/recipes", async (req, res) => {
-//   const recipes = req.body;
-//   console.log(recipes);
-//   const result = await recipeCollection.insertOne(recipes);
-//   res.send(result);
-// });
-
-// app.get("/allRecipe", async (req, res) => {
-//   const result = await recipeCollection.find().toArray();
-//   res.send(result);
-// });
