@@ -57,10 +57,7 @@ async function run() {
       const options = { upsert: true };
       const updateRecipe = {
         $set: {
-          title: recipe.title,
-          price: recipe.price,
-          instruction: recipe.instruction,
-          ingredients: recipe.ingredients,
+          ...recipe
         },
       };
       const result = await recipeCollection.updateOne(
